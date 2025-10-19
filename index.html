@@ -151,7 +151,7 @@
             }
         });
         
-        const gifUrl = 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDJxdm1nZHZ5YzJxdm1nZHZ5YzJxdm1nZHZ5YzJxdm1n/3o7btPCcdNniyf0ArS/giphy.gif';
+        const gifUrl = 'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif';
         const message = 'This is your test notification message!';
         
         function showStatus(msg, type) {
@@ -159,15 +159,23 @@
             statusDiv.className = `status ${type}`;
         }
         
-        function showNotification(title, body, icon) {
+        function showNotification(title, body, icon, image) {
             if (Notification.permission === 'granted') {
-                const notification = new Notification(title, {
+                const options = {
                     body: body,
                     icon: icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
                     badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
-                    tag: 'test-notification',
-                    requireInteraction: false
-                });
+                    tag: 'test-notification-' + Date.now(),
+                    requireInteraction: false,
+                    silent: false
+                };
+                
+                // Add image if provided (for GIF notifications)
+                if (image) {
+                    options.image = image;
+                }
+                
+                const notification = new Notification(title, options);
                 
                 notification.onclick = function() {
                     window.focus();
@@ -183,19 +191,21 @@
             
             notificationInterval = setInterval(() => {
                 if (counter % 2 === 0) {
-                    // Send GIF notification
+                    // Send GIF notification with image
                     showNotification(
                         '🎬 GIF Notification',
-                        'Check out this GIF: ' + gifUrl,
-                        'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎬</text></svg>'
+                        'Check out this animated GIF!',
+                        'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎬</text></svg>',
+                        gifUrl
                     );
-                    showStatus('Sent GIF notification', 'success');
+                    showStatus('Sent GIF notification with image', 'success');
                 } else {
-                    // Send message notification
+                    // Send message notification (no image)
                     showNotification(
                         '💬 Message Notification',
                         message,
-                        'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>'
+                        'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>',
+                        null
                     );
                     showStatus('Sent message notification', 'success');
                 }
