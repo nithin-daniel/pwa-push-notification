@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4F46E5">
+    <title>PWA Push Test</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlBXQSBQdXNoIFRlc3QiLAogICJzaG9ydF9uYW1lIjogIlB1c2hUZXN0IiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmZmZmZmYiLAogICJ0aGVtZV9jb2xvciI6ICIjNEY0NkU1IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyUzRSUzQ3RleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCclM0Xwn5OjJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        h1 {
+            color: white;
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        button {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background: #4338CA;
+        }
+        
+        button:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .status.success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .status.error {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        
+        .status.info {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hello from PWA! 📱</h1>
+    
+    <div class="container">
+        <h2>Push Notification Test</h2>
+        <p style="margin: 15px 0; color: #6B7280;">Click the button to enable notifications</p>
+        <button id="enableBtn">Enable Notifications</button>
+        <button id="stopBtn" style="display: none;">Stop Notifications</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let notificationInterval = null;
+        let counter = 0;
+        
+        const statusDiv = document.getElementById('status');
+        const enableBtn = document.getElementById('enableBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        const gifUrl = 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDJxdm1nZHZ5YzJxdm1nZHZ5YzJxdm1nZHZ5YzJxdm1n/3o7btPCcdNniyf0ArS/giphy.gif';
+        const message = 'This is your test notification message!';
+        
+        function showStatus(msg, type) {
+            statusDiv.textContent = msg;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function showNotification(title, body, icon) {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
+                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
+                    tag: 'test-notification',
+                    requireInteraction: false
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+                
+                setTimeout(() => notification.close(), 5000);
+            }
+        }
+        
+        function startNotifications() {
+            counter = 0;
+            
+            notificationInterval = setInterval(() => {
+                if (counter % 2 === 0) {
+                    // Send GIF notification
+                    showNotification(
+                        '🎬 GIF Notification',
+                        'Check out this GIF: ' + gifUrl,
+                        'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎬</text></svg>'
+                    );
+                    showStatus('Sent GIF notification', 'success');
+                } else {
+                    // Send message notification
+                    showNotification(
+                        '💬 Message Notification',
+                        message,
+                        'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💬</text></svg>'
+                    );
+                    showStatus('Sent message notification', 'success');
+                }
+                counter++;
+            }, 5000);
+            
+            enableBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            showStatus('Notifications enabled! Sending every 5 seconds...', 'info');
+        }
+        
+        function stopNotifications() {
+            if (notificationInterval) {
+                clearInterval(notificationInterval);
+                notificationInterval = null;
+            }
+            enableBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            showStatus('Notifications stopped', 'info');
+        }
+        
+        enableBtn.addEventListener('click', async () => {
+            if (!('Notification' in window)) {
+                showStatus('This browser does not support notifications', 'error');
+                return;
+            }
+            
+            if (Notification.permission === 'granted') {
+                startNotifications();
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    startNotifications();
+                } else {
+                    showStatus('Notification permission denied', 'error');
+                }
+            } else {
+                showStatus('Notifications are blocked. Please enable them in browser settings.', 'error');
+            }
+        });
+        
+        stopBtn.addEventListener('click', stopNotifications);
+        
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (event) => {
+                    self.skipWaiting();
+                });
+                
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(clients.claim());
+                });
+            `;
+            
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl)
+                .then(() => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+    </script>
+</body>
+</html>
