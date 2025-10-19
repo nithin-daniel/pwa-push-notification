@@ -1,8 +1,8 @@
 {
-  "name": "ADHD PWA",
-  "short_name": "ADHD APP",
-  "description": "Simple ADHD PWA with push notifications",
-  "start_url": "./index.html",
+  "name": "PWA Push Test",
+  "short_name": "PushTest",
+  "description": "Simple PWA with push notifications",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4F46E5",
