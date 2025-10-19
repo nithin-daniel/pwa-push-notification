@@ -3,7 +3,9 @@ const CACHE_NAME = 'pwa-push-v1';
 const ASSETS_TO_CACHE = [
   '.',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './image.png',
+  './sw.js'
 ];
 
 // Install event
@@ -76,33 +78,70 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   console.log('Push notification received:', event);
   
-  const options = {
-    body: event.data ? event.data.text() : 'New notification',
-    icon: './image.png',
-    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
-    requireInteraction: false
+  let notificationData = {
+    title: 'PWA Push Test',
+    body: 'New notification',
+    icon: '/image.png',
+    badge: '/image.png',
+    vibrate: [200, 100, 200],
+    tag: 'push-notification-' + Date.now(),
+    requireInteraction: true,
+    actions: [
+      {
+        action: 'open',
+        title: 'Open App'
+      }
+    ]
   };
   
+  // Parse push event data if available
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = { ...notificationData, ...data };
+    } catch (e) {
+      notificationData.body = event.data.text();
+    }
+  }
+  
   event.waitUntil(
-    self.registration.showNotification('PWA Push Test', options)
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      vibrate: notificationData.vibrate,
+      requireInteraction: notificationData.requireInteraction,
+      actions: notificationData.actions,
+      data: { 
+        url: '/'
+      }
+    })
   );
 });
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      // Focus existing window if available
-      for (let client of clientList) {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Check if app window already exists
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
         if (client.url === '/' && 'focus' in client) {
           return client.focus();
         }
       }
-      // Otherwise open new window
+      // If not, open new window
       if (clients.openWindow) {
         return clients.openWindow('/');
       }
     })
   );
+});
+
+// Handle notification close
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification closed');
 });

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#4F46E5">
     <link rel="manifest" href="manifest.json">
     <title>PWA Push Test</title>
-    <link rel="icon" type="image/png" href="image.png">
+    <link rel="icon" type="image/png" href="animated-icon.gif">
     <style>
         * {
             margin: 0;
@@ -349,10 +349,11 @@
             if (Notification.permission === 'granted') {
                 const options = {
                     body: body,
-                    icon: icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
-                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
+                    icon: '/image.png',
+                    badge: '/image.png',
                     tag: 'test-notification-' + Date.now(),
-                    requireInteraction: false,
+                    requireInteraction: true,
+                    vibrate: [200, 100, 200],
                     silent: false
                 };
                 
@@ -368,7 +369,8 @@
                     notification.close();
                 };
                 
-                setTimeout(() => notification.close(), 5000);
+                // Longer timeout for Android
+                setTimeout(() => notification.close(), 8000);
             }
         }
         
