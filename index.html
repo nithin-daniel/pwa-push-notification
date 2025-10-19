@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4F46E5">
     <title>PWA Push Test</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlBXQSBQdXNoIFRlc3QiLAogICJzaG9ydF9uYW1lIjogIlB1c2hUZXN0IiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmZmZmZmYiLAogICJ0aGVtZV9jb2xvciI6ICIjNEY0NkU1IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyUzRSUzQ3RleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCclM0Xwn5OjJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔔</text></svg>">
     <style>
         * {
             margin: 0;
@@ -92,8 +92,22 @@
     <div class="container">
         <h2>Push Notification Test</h2>
         <p style="margin: 15px 0; color: #6B7280;">Click the button to enable notifications</p>
+        <div id="mobileInstructions" style="display: none; background: #FEF3C7; color: #92400E; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left; font-size: 0.9rem;">
+            <strong>📱 Mobile Instructions:</strong><br><br>
+            <strong>For Android Chrome:</strong><br>
+            1. Click "Enable Notifications"<br>
+            2. Tap "Allow" when prompted<br>
+            3. Keep the page open or add to home screen<br><br>
+            <strong>For iPhone Safari:</strong><br>
+            1. Tap the Share button (⬆️)<br>
+            2. Scroll and tap "Add to Home Screen"<br>
+            3. Open from home screen<br>
+            4. Then enable notifications<br><br>
+            <strong>Note:</strong> iOS Safari requires PWA to be installed to home screen for notifications to work.
+        </div>
         <button id="enableBtn">Enable Notifications</button>
         <button id="stopBtn" style="display: none;">Stop Notifications</button>
+        <button id="installBtn" style="display: none; background: #059669;">Add to Home Screen</button>
         <div id="status"></div>
     </div>
 
@@ -104,6 +118,38 @@
         const statusDiv = document.getElementById('status');
         const enableBtn = document.getElementById('enableBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const installBtn = document.getElementById('installBtn');
+        const mobileInstructions = document.getElementById('mobileInstructions');
+        
+        // Detect mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        
+        if (isMobile) {
+            mobileInstructions.style.display = 'block';
+        }
+        
+        // PWA Install prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-block';
+        });
+        
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    showStatus('✅ App installed! Open from home screen for best experience.', 'success');
+                }
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            }
+        });
         
         const gifUrl = 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDJxdm1nZHZ5YzJxdm1nZHZ5YzJxdm1nZHZ5YzJxdm1n/3o7btPCcdNniyf0ArS/giphy.gif';
         const message = 'This is your test notification message!';
@@ -173,45 +219,70 @@
         
         enableBtn.addEventListener('click', async () => {
             if (!('Notification' in window)) {
-                showStatus('This browser does not support notifications', 'error');
+                showStatus('❌ This browser does not support notifications', 'error');
                 return;
             }
             
-            if (Notification.permission === 'granted') {
-                startNotifications();
-            } else if (Notification.permission !== 'denied') {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    startNotifications();
+            // Special handling for iOS
+            if (isIOS && !isStandalone) {
+                showStatus('📱 iOS requires: Tap Share ⬆️ → Add to Home Screen → Open from home screen, then enable notifications.', 'error');
+                return;
+            }
+            
+            const currentPermission = Notification.permission;
+            console.log('Current permission:', currentPermission);
+            console.log('Is mobile:', isMobile);
+            console.log('Is iOS:', isIOS);
+            console.log('Is standalone:', isStandalone);
+            
+            // If already denied, show instructions
+            if (currentPermission === 'denied') {
+                if (isMobile) {
+                    showStatus('❌ Notifications blocked. Go to your browser Settings → Site Settings → Notifications → Allow, then refresh.', 'error');
                 } else {
-                    showStatus('Notification permission denied', 'error');
+                    showStatus('❌ Notifications blocked. Click the lock icon 🔒 in address bar → Notifications → Allow, then refresh.', 'error');
                 }
-            } else {
-                showStatus('Notifications are blocked. Please enable them in browser settings.', 'error');
+                return;
+            }
+            
+            // If already granted, start immediately
+            if (currentPermission === 'granted') {
+                startNotifications();
+                return;
+            }
+            
+            // Request permission (only works if permission is 'default')
+            try {
+                showStatus('🔔 Requesting notification permission... Please allow when prompted!', 'info');
+                
+                // Add a small delay for mobile
+                if (isMobile) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    showStatus('✅ Permission granted! Starting notifications...', 'success');
+                    setTimeout(startNotifications, 500);
+                } else if (permission === 'denied') {
+                    if (isMobile) {
+                        showStatus('❌ Permission denied. Go to Settings → Site Settings → Notifications → Allow this site.', 'error');
+                    } else {
+                        showStatus('❌ Permission denied. Click the lock icon 🔒 in address bar → Notifications → Allow, then refresh.', 'error');
+                    }
+                } else {
+                    showStatus('⚠️ Permission dismissed. Click the button again to retry.', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message, 'error');
             }
         });
         
         stopBtn.addEventListener('click', stopNotifications);
         
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', (event) => {
-                    self.skipWaiting();
-                });
-                
-                self.addEventListener('activate', (event) => {
-                    event.waitUntil(clients.claim());
-                });
-            `;
-            
-            const blob = new Blob([swCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            
-            navigator.serviceWorker.register(swUrl)
-                .then(() => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed:', err));
-        }
+        // Note: Service worker registration removed as it's not necessary for basic notifications
+        // and causes issues with blob URLs on some hosting platforms
     </script>
 </body>
 </html>
