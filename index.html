@@ -85,6 +85,140 @@
             background: #DBEAFE;
             color: #1E40AF;
         }
+
+        /* Install Modal Styles */
+        .install-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .install-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .install-modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-in-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .install-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .install-modal h3 {
+            font-size: 1.8rem;
+            color: #1F2937;
+            margin-bottom: 15px;
+        }
+
+        .install-modal p {
+            color: #6B7280;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .install-modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .install-modal-buttons button {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-install {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-install:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-later {
+            background: #E5E7EB;
+            color: #6B7280;
+        }
+
+        .btn-later:hover {
+            background: #D1D5DB;
+        }
+
+        .close-install {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #9CA3AF;
+            transition: color 0.3s;
+            margin: 0;
+        }
+
+        .close-install:hover {
+            color: #6B7280;
+        }
+
+        .install-modal-content {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -112,6 +246,20 @@
         <div id="status"></div>
     </div>
 
+    <!-- Install Popup Modal -->
+    <div id="installModal" class="install-modal">
+        <div class="install-modal-content">
+            <button class="close-install" onclick="closeInstallModal()">✕</button>
+            <div class="install-icon">📱</div>
+            <h3>Install App</h3>
+            <p>Add this app to your home screen for quick access and the best experience!</p>
+            <div class="install-modal-buttons">
+                <button class="btn-install" id="modalInstallBtn">Install</button>
+                <button class="btn-later" onclick="closeInstallModal()">Later</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Register Service Worker
         if ('serviceWorker' in navigator) {
@@ -132,6 +280,8 @@
         const stopBtn = document.getElementById('stopBtn');
         const installBtn = document.getElementById('installBtn');
         const mobileInstructions = document.getElementById('mobileInstructions');
+        const installModal = document.getElementById('installModal');
+        const modalInstallBtn = document.getElementById('modalInstallBtn');
         
         // Detect mobile
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -145,10 +295,33 @@
         // PWA Install prompt
         let deferredPrompt;
         
+        function showInstallModal() {
+            installModal.classList.add('active');
+        }
+        
+        function closeInstallModal() {
+            installModal.classList.remove('active');
+        }
+        
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            // Show the install modal popup
+            showInstallModal();
             installBtn.style.display = 'inline-block';
+        });
+        
+        modalInstallBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    showStatus('✅ App installed! Open from home screen for best experience.', 'success');
+                    closeInstallModal();
+                }
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            }
         });
         
         installBtn.addEventListener('click', async () => {
@@ -157,6 +330,7 @@
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
                     showStatus('✅ App installed! Open from home screen for best experience.', 'success');
+                    closeInstallModal();
                 }
                 deferredPrompt = null;
                 installBtn.style.display = 'none';

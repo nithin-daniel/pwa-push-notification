@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Animated Icon GIF</title>
+</head>
+<body>
+    <h1>Animated Icon Generator</h1>
+    <p>This page generates an animated icon GIF for your PWA. Open the browser console and run the code below, or click the button.</p>
+    <button onclick="generateAnimatedIcon()">Generate & Download Animated Icon GIF</button>
+    <p id="status"></p>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    <script>
+        function generateAnimatedIcon() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Generating animated icon...';
+            
+            try {
+                const gif = new GIF({
+                    workers: 2,
+                    quality: 10,
+                    width: 192,
+                    height: 192
+                });
+
+                const canvas = document.getElementById('canvas');
+                canvas.width = 192;
+                canvas.height = 192;
+                const ctx = canvas.getContext('2d');
+
+                // Generate 12 frames of animation
+                for (let i = 0; i < 12; i++) {
+                    ctx.fillStyle = '#f3f4f6';
+                    ctx.fillRect(0, 0, 192, 192);
+                    
+                    // Draw rounded background
+                    ctx.fillStyle = '#667eea';
+                    ctx.beginPath();
+                    ctx.roundRect(10, 10, 172, 172, 30);
+                    ctx.fill();
+
+                    // Draw rotation animation
+                    ctx.save();
+                    ctx.translate(96, 96);
+                    ctx.rotate((i / 12) * Math.PI * 2);
+                    ctx.translate(-96, -96);
+
+                    // Draw bell icon with rotation
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 120px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🔔', 96, 96);
+
+                    ctx.restore();
+
+                    gif.addFrame(canvas, { delay: 100 });
+                }
+
+                gif.on('finished', function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'animated-icon.gif';
+                    a.click();
+                    statusEl.textContent = '✅ Animated icon downloaded! Replace image.png with the downloaded file.';
+                });
+
+                gif.render();
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+            }
+        }
+
+        // Polyfill for roundRect if not available
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+                return this;
+            };
+        }
+    </script>
+</body>
+</html>
